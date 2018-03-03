@@ -1,0 +1,22 @@
+{
+  "name": "pta-dynamic-analysis",
+  "version": "1.0.0",
+  "description": "________________________________________________________________________________ Increasing the Performance of Dynamic Analyses Using Program Transformations",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/linjuk/pta-dynamic-analysis.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/linjuk/pta-dynamic-analysis/issues"
+  },
+  "homepage": "https://github.com/linjuk/pta-dynamic-analysis#readme",
+  "dependencies": {
+    "uglify-js2": "^2.1.11"
+  }
+}

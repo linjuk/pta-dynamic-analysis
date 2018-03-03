@@ -1,0 +1,12 @@
+# OSX
+.DS_Store
+
+# Node
+node_modules
+
+# Logs
+*.log
+
+# Jalangi
+jalangi2/*
+jalangi2
