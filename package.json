@@ -4,6 +4,7 @@
   "description": "________________________________________________________________________________ Increasing the Performance of Dynamic Analyses Using Program Transformations",
   "main": "index.js",
   "scripts": {
+    "start": "npm install && git clone https://github.com/Samsung/jalangi2.git  && cd jalangi2 && npm install && cd .. && git clone https://github.com/chromium/octane.git",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {

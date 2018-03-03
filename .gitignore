@@ -10,3 +10,7 @@ node_modules
 # Jalangi
 jalangi2/*
 jalangi2
+
+# Octane
+octane/*
+octane
