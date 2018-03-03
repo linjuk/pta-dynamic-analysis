@@ -1,23 +1,25 @@
 {
   "name": "pta-dynamic-analysis",
   "version": "1.0.0",
-  "description": "________________________________________________________________________________ Increasing the Performance of Dynamic Analyses Using Program Transformations",
+  "description": "______________________________________________________________________________ Increasing the Performance of Dynamic Analyses Using Program Transformations",
   "main": "index.js",
   "scripts": {
-    "start": "npm install && git clone https://github.com/Samsung/jalangi2.git  && cd jalangi2 && npm install && cd .. && git clone https://github.com/chromium/octane.git",
-    "test": "echo \"Error: no test specified\" && exit 1"
+  "clean": "rm -rf benchmark-octane && rm -rf generated && rm -rf jalangi2 && rm -rf node_modules && npm install && git clone https://github.com/Samsung/jalangi2.git  && cd jalangi2 && npm install && cd .. && git clone https://github.com/dai-shi/benchmark-octane.git",
+  "start": "node index.js --octane 10 --jalangi 3",
+  "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
-    "type": "git",
-    "url": "git+https://github.com/linjuk/pta-dynamic-analysis.git"
+  "type": "git",
+  "url": "git+https://github.com/linjuk/pta-dynamic-analysis.git"
   },
   "author": "",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/linjuk/pta-dynamic-analysis/issues"
+  "url": "https://github.com/linjuk/pta-dynamic-analysis/issues"
   },
   "homepage": "https://github.com/linjuk/pta-dynamic-analysis#readme",
   "dependencies": {
-    "uglify-js2": "^2.1.11"
+  "esvalidate": "^0.1.3",
+  "uglify-js2": "^2.1.11"
   }
 }

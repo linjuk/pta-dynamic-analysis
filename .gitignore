@@ -5,12 +5,16 @@
 node_modules
 
 # Logs
-*.log
+.log
 
 # Jalangi
-jalangi2/*
+jalangi2/
 jalangi2
 
-# Octane
-octane/*
-octane
+# Benchmart Octane NodeJS
+benchmark-octane/*
+benchmark-octane
+
+# Generated folders, each user will have their own upon running
+generated/*
+generated

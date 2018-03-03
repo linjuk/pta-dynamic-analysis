@@ -4,6 +4,34 @@ var exec = require("child_process").execSync;
 var fs = require("fs");
 var UglifyJS = require("uglify-js2");
 
+// let's initialize all paths here
+var path = {};
+
+path['base'] = process.cwd() + '/';
+path['jalangiPath'] = path['base'] + 'jalangi2/';
+path['benchmark-octane'] = path['base'] + 'benchmark-octane/'
+path['octanePath'] = path['benchmark-octane'] + 'lib/octane/';
+path['generatedPath'] = path['base'] + 'generated/';
+path['transformedPath'] = path['generatedPath'] + 'transformed/';
+path['resultsPath'] = path['generatedPath'] + 'results/';
+
+var octaneCount = process.argv[3] || 1;
+var jalangiCount = process.argv[5] || 1;
+
+// create folders if they don't exist
+for(var key in path) {
+
+  if(!fs.existsSync(path[key]))
+  {
+    fs.mkdirSync(path[key]);
+    console.log('Directory created:' + path[key]);
+  }
+  else{
+    console.log('Directory already exists:' + path[key]);
+  }
+
+}
+
 // function to output command results
 function output(error, stdout, stderr) {
   console.log(stdout);
@@ -40,7 +68,7 @@ function name(c){
 }
 
 // function to generate an txt file that contains compressor options
-function generateOptionsFile(c, transformationPath){
+function generateOptionsFile(c, transformedPath){
   var options = "";
   options += "mangle:true,\ncompress:{\n " ;
   var dicedOptions = ["booleans ", "cascade", "conditionals", "comparisons", "dead_code", "drop_debugger", "evaluate", "hoist_funs", "hoist_vars", "if_return", "join_vars", "loops", "sequences", "side_effects", "properties", "unsafe", "unsafe_comps", "unused"];
@@ -53,7 +81,7 @@ function generateOptionsFile(c, transformationPath){
     }
   }
   options += "\n}"
-  fs.appendFileSync(transformationPath+"/compressor_options.txt", options, "utf8")
+  fs.appendFileSync(transformedPath+"/compressor_options.txt", options, "utf8")
 }
 
 // function to convert a given number to a boolean
@@ -66,97 +94,85 @@ function toBoolean(num){
 }
 // sourceCode files
 var sourceFiles = [
-  "box2d" ,
-  //'code-load' ,
+  //"box2d" ,
+  // //'code-load' ,
   'deltablue' ,
-  'earley-boyer' ,
-  //'gbemu' ,
-  'navier-stokes',
-  // 'pdfjs',
-  'raytrace',
-  'splay'
+  // 'earley-boyer' ,
+  // //'gbemu' ,
+  // 'navier-stokes',
+  // // 'pdfjs',
+  // 'raytrace',
+  // 'splay'
 ];
 
 // chained analysis part of the command
-var analysis = ' --analysis experiments/analysis.js';
-
-// path to the bencmark source folder and the run script
-var benchmarkPath = process.cwd() + "/benchmark-octane/lib/octane/";
-var octaneRunPath = process.cwd() + "/benchmark-octane/run.js";
-
-// create folder if doesn't exist
-if(!fs.existsSync('experiments/results')){
-  fs.mkdirSync('experiments/results');
-}
-console.log('');
-console.log('Source code directory: /jalangi2/tests/octane/');
-console.log('Dynamic analysis result directory: /experiments/results/');
-console.log('Code transformation result directory: /experiments/transformed/');
-console.log('');
+// var analysis = '--analysis '+path['base']+'analysis.js';
+var analysis = '--analysis '+path['jalangiPath']+'src/js/sample_analyses/ChainedAnalyses.js --analysis '+path['jalangiPath']+'src/js/sample_analyses/dlint/Utils.js --analysis '+path['jalangiPath']+'src/js/sample_analyses/dlint/CheckNaN.js --analysis '+path['jalangiPath']+'src/js/sample_analyses/dlint/FunCalledWithMoreArguments.js --analysis '+path['jalangiPath']+'src/js/sample_analyses/dlint/CompareFunctionWithPrimitives.js --analysis '+path['jalangiPath']+'src/js/sample_analyses/dlint/ShadowProtoProperty.js --analysis '+path['jalangiPath']+'src/js/sample_analyses/dlint/ConcatUndefinedToString.js --analysis '+path['jalangiPath']+'src/js/sample_analyses/dlint/UndefinedOffset.js --analysis '+path['base']+'analysis.js';
 
 var startTime = 0;
-var pathToResultsFromOriginals = 'experiments/results/original'
+var originalResultsPath = path['resultsPath'] + 'original/'
 
-console.log('');
-console.log('->  Check if jalangi2 was applied on the original files. If not, do it.');
-console.log('');
-if(!fs.existsSync(pathToResultsFromOriginals)){
-  fs.mkdirSync(pathToResultsFromOriginals);
-  console.log('');
-  console.log('|-------------------------------------------|');
-  console.log('| Dynamic analysis on original source files |');
-  console.log('|-------------------------------------------|');
-  console.log('');
-  // perform analysis on source files
-  for(var i=0; i < sourceFiles.length; i++)
-  {
-    startTime = process.hrtime();
-    var startMem = (((process.memoryUsage().heapUsed / 1024 / 1024) * 100) / 100).toFixed(2);
-    var command = 'node jalangi2/src/js/commands/jalangi.js --inlineIID --inlineSource '+ analysis + ' octane/' + sourceFiles[i] + '.js >> ' + pathToResultsFromOriginals + '/' + sourceFiles[i] + '.js_results.txt';
-    // like running the command in terminal and output function defined above prints the result of the command
-    exec(command, output);
-    var hookCount = cp.execSync('grep -c J$. octane/'+ sourceFiles[i] +'_jalangi_.js').toString();
-    hookCount = hookCount.trimRight();
-    var regex = /[\d|,|.|E|\+]+/g;
-    var conditionalsCount = cp.execSync("grep -e conditionals " + pathToResultsFromOriginals + '/' + sourceFiles[i] + ".js_results.txt").toString().match(regex)[0];
-    var endMem = (((process.memoryUsage().heapUsed / 1024 / 1024) * 100) / 100).toFixed(2);
-    var estimatedMemUsage = (endMem - startMem).toFixed(2);
-    var compTime = parseFloat(process.hrtime(startTime)[0] + "." + process.hrtime(startTime)[1].toString()).toFixed(2);
-    console.log('✓ ' + sourceFiles[i] + '.js, elapsed time: '+ compTime + ', hookCount: '+ hookCount + ', conditionalsCount: ' + conditionalsCount  + ' memStart: '+startMem + 'MB memEnd: '+endMem+'MB estimatedMemUsage: '+ estimatedMemUsage+'MB');
-    var fileResultsFromOriginals = sourceFiles[i] + ".min.js: " + compTime + ","+ hookCount + "," + conditionalsCount  + ","+ estimatedMemUsage;
-    fs.appendFileSync(pathToResultsFromOriginals+"/"+"originals_results.txt", fileResultsFromOriginals + "\n", "utf8");
-  }
+if(!fs.existsSync(originalResultsPath)){
+  fs.mkdirSync(originalResultsPath);
 }
 
-var pathToOctaneRunsOnOriginals = pathToResultsFromOriginals + "/octane"
-
 console.log('');
-console.log('->  Check if octane was applied on the original files. If not, do it.');
+console.log('|-------------------------------------------|');
+console.log('| Dynamic analysis on original source files |');
+console.log('|-------------------------------------------|');
 console.log('');
-
-if(!fs.existsSync(pathToOctaneRunsOnOriginals)){
-  fs.mkdirSync(pathToOctaneRunsOnOriginals);
-  console.log('');
-  console.log('|-----------------------------------------------|');
-  console.log('| Pass the original files to Octane (benchmark) |');
-  console.log('| Run it to obtain the measured score           |');
-  console.log('|-----------------------------------------------|');
-  console.log('');
-  var originalFilesPath = process.cwd() + "/benchmark-octane/lib/octane/original_files"
-  // copy all original files to the bencmark
-  for(var i = 0; i < sourceFiles.length; i++)
-  {
-    cp.execSync('cp ' + originalFilesPath + "/" + sourceFiles[i] + '.js ' + benchmarkPath + "/" + sourceFiles[i] + '.js' );
-  }
-  // execute the Octane benchmark 10 times and write the run results
-  for(var j = 1; j <= 10; j++){
-    cp.execSync('node ' + octaneRunPath + '>> ' + pathToOctaneRunsOnOriginals + '/' + 'octane_run_' + j + '.txt');
-  }
+// perform analysis on source files
+for(var i=0; i < sourceFiles.length; i++)
+{
+  startTime = process.hrtime();
+  var startMem = (((process.memoryUsage().heapUsed / 1024 / 1024) * 100) / 100).toFixed(2);
+  cp.execSync('cp ' + path['jalangiPath'] + 'tests/octane/' + sourceFiles[i] + '.js ' + path['octanePath'] + "/" + sourceFiles[i] + '.js' );
+  var command = 'node '+path['jalangiPath']+'src/js/commands/jalangi.js --inlineIID --inlineSource '+ analysis + ' '+ path['octanePath'] + sourceFiles[i] + '.js >> ' + originalResultsPath + sourceFiles[i] + '.js_results.txt';
+  // like running the command in terminal and output function defined above prints the result of the command
+  exec(command, output);
+  var hookCount = cp.execSync('grep -c J$. '+ path['octanePath'] + sourceFiles[i] +'_jalangi_.js').toString();
+  hookCount = hookCount.trimRight();
+  var regex = /[\d|,|.|E|\+]+/g;
+  var conditionalsCount = cp.execSync("grep -e conditionals " + originalResultsPath + '/' + sourceFiles[i] + ".js_results.txt").toString().match(regex)[0];
+  var endMem = (((process.memoryUsage().heapUsed / 1024 / 1024) * 100) / 100).toFixed(2);
+  var estimatedMemUsage = (endMem - startMem).toFixed(2);
+  var compTime = parseFloat(process.hrtime(startTime)[0] + "." + process.hrtime(startTime)[1].toString()).toFixed(2);
+  console.log('✓ ' + sourceFiles[i] + '.js, elapsed time: '+ compTime + ', hookCount: '+ hookCount + ', conditionalsCount: ' + conditionalsCount  + ' memStart: '+startMem + 'MB memEnd: '+endMem+'MB estimatedMemUsage: '+ estimatedMemUsage+'MB');
+  var fileResultsFromOriginals = sourceFiles[i] + ".min.js: " + compTime + ","+ hookCount + "," + conditionalsCount  + ","+ estimatedMemUsage;
+  fs.appendFileSync(originalResultsPath + "originals_results.txt", fileResultsFromOriginals + "\n", "utf8");
 }
 
-// create folder if doesn't exist
-if(!fs.existsSync('experiments/transformed')){
-  fs.mkdirSync('experiments/transformed');
+// process.exit();
+
+// path to the bencmark source folder and the run script
+// var benchmarkPath = process.cwd() + "/benchmark-octane/lib/octane/";
+// var octaneRunPath = process.cwd() + "/benchmark-octane/run.js";
+// var pathToOctaneRunsOnOriginals = originalResultsPath + "octane";
+
+var originalOctaneBenchmarkPath = originalResultsPath + 'octane/'
+
+if(!fs.existsSync(originalOctaneBenchmarkPath)){
+  fs.mkdirSync(originalOctaneBenchmarkPath);
+}
+
+console.log('');
+console.log('|-------------------------------------------------------------------------|');
+console.log('| Run octane benchmark on original non-transformed files and save results |');
+console.log('|-------------------------------------------------------------------------|');
+console.log('');
+
+// copy relevant files from benchmark-octane nodejs library to our generated/results/octane folder
+// for(var i = 0; i < sourceFiles.length; i++)
+// {
+//   cp.execSync('cp ' + path['octanePath'] + "/" + sourceFiles[i] + '.js ' + originalOctaneBenchmarkPath + "/" + sourceFiles[i] + '.js' );
+// }
+
+// execute the Octane benchmark n number of times and write the run results
+// todo = parameterize number of octane benchmark
+for(var j = 1; j <= octaneCount; j++){
+  var computed_command = 'node ' + path['benchmark-octane'] + 'run.js >> ' + originalOctaneBenchmarkPath + 'octane_run_' + j + '.txt';
+  cp.execSync(computed_command);
+  console.log('✓ Octane benchmark run '+ j + ' time');
 }
 
 console.log('');
@@ -173,16 +189,15 @@ var c = dice();
 var digit = name(c);
 console.log('');
 console.log('Number of the generated transformation: ' + digit.toString());
-console.log('');
 
-var transformationPath = process.cwd() + "/experiments/transformed/" + digit.toString() + "/";
+var transformationPath = path['transformedPath'] + digit.toString() + "/";
 
 // check if diced combination of options already exists.
 // If so, dice so long until "new" set of options is in place.
 while (fs.existsSync(transformationPath)){
   c = dice;
   digit = name(c);
-  transformationPath = process.cwd() + "/experiments/transformed/" + digit.toString() + "/";
+  transformationPath = path['transformedPath'] + digit.toString() + "/";
 }
 // create the new subfolder for the transformation
 fs.mkdirSync(transformationPath);
@@ -192,7 +207,7 @@ generateOptionsFile(c, transformationPath)
 for(var i=0; i < sourceFiles.length; i++)
 {
   startTime = process.hrtime();
-  var sourceFilePath = process.cwd() + "/jalangi2/tests/octane/"+ sourceFiles[i] + ".js";
+  var sourceFilePath = path['octanePath'] + sourceFiles[i] + ".js";
   var destFilePath = transformationPath + sourceFiles[i] + ".min.js";
 
   // refer to this link for further transformation options:
@@ -227,7 +242,6 @@ for(var i=0; i < sourceFiles.length; i++)
   console.log('✓ ' + sourceFiles[i] + '.js, elapsed time is '+ compTime);
 }
 
-
 console.log('');
 console.log('|-------------------------------------------------------|');
 console.log('| Validating the functionality of the transformed files |');
@@ -243,7 +257,6 @@ for(var i=0; i < sourceFiles.length; i++)
   console.log(message);
 }
 
-
 console.log('');
 console.log('|--------------------------------------------------|');
 console.log('| Pass the transformed files to Octane (benchmark) |');
@@ -251,8 +264,8 @@ console.log('| Run it to obtain the measured score              |');
 console.log('|--------------------------------------------------|');
 console.log('');
 // create the result subfolder with the same name as the folder for the transformation
-fs.mkdirSync("experiments/results/" + digit.toString());
-var resultsPath = process.cwd() + "/experiments/results/" + digit.toString() + "/";
+fs.mkdirSync(path['resultsPath'] + digit.toString());
+var resultsPath = path['resultsPath'] + digit.toString() + "/";
 // create the Octane result folder
 var octaneResultsPath = resultsPath + "octane";
 fs.mkdirSync(octaneResultsPath)
@@ -260,14 +273,17 @@ fs.mkdirSync(octaneResultsPath)
 // copy all transfomed files to the bencmark
 for(var i = 0; i < sourceFiles.length; i++)
 {
-  cp.execSync('cp ' + transformationPath + "/" + sourceFiles[i] + '.min.js ' + benchmarkPath + "/" + sourceFiles[i] + '.js' );
+  cp.execSync('cp ' + transformationPath + "/" + sourceFiles[i] + '.min.js ' + path['octanePath'] + "/" + sourceFiles[i] + '.js' );
 }
 // execute the Octane benchmark 10 times and write the run results
-for(var j = 1; j <= 10; j++){
-  cp.execSync('node ' + octaneRunPath + '>> ' + octaneResultsPath + '/octane_run_' + j + '.txt');
+for(var j = 1; j <= octaneCount; j++){
+  cp.execSync('node ' + path['benchmark-octane'] + 'run.js >> ' + octaneResultsPath + '/octane_run_' + j + '.txt');
+  console.log('✓ Octane benchmark run '+ j + ' time');
+
   if(j == 1){
-    var command_run_octane = 'node ' + octaneRunPath + '>> ' + resultsPath + 'octane_results.txt';
+    var command_run_octane = 'node ' + path['benchmark-octane'] + 'run.js >> ' + resultsPath + 'octane_results.txt';
     exec(command_run_octane, output);
+    
   }
 }
 
@@ -280,11 +296,11 @@ console.log('');
 for(var i=0; i < sourceFiles.length; i++)
 {
   var regex = /[\d|,|.|E|K|M\+]+/g;
-  var sizeOfFile =  cp.execSync('du -b ' + transformationPath + "/" + sourceFiles[i] + '.min.js').toString().match(regex)[0];
+  var sizeOfFile =  cp.execSync('du -h ' + transformationPath + sourceFiles[i] + '.min.js').toString().match(regex)[0];
   fs.appendFileSync(resultsPath+"files_sizes.txt", sourceFiles[i] + ".min.js: " + sizeOfFile + ",\n", "utf8");
 }
 // perform analysis on transformed files for ten times and aggrigate the data
-for(var j = 1; j < 11; j++)
+for(var j = 1; j < jalangiCount; j++)
 {
   console.log('');
   console.log('|-----------------------------------|');
@@ -297,7 +313,7 @@ for(var j = 1; j < 11; j++)
   {
     startTime = process.hrtime();
     var startMem = (((process.memoryUsage().heapUsed / 1024 / 1024) * 100) / 100).toFixed(2);
-    var command = 'node jalangi2/src/js/commands/jalangi.js --inlineIID --inlineSource '+ analysis + " " + transformationPath + "/" + sourceFiles[i] + '.min.js >> ' + runPath + sourceFiles[i] + '.min.js_results.txt';
+    var command = 'node '+path['jalangiPath']+'/src/js/commands/jalangi.js --inlineIID --inlineSource '+ analysis + " " + transformationPath + "/" + sourceFiles[i] + '.min.js >> ' + runPath + sourceFiles[i] + '.min.js_results.txt';
     // like running the command in terminal and output function defined above prints the result of the command
     exec(command, output);
     var hookCount = cp.execSync('grep -c J$. ' + transformationPath + "/" + sourceFiles[i] + '.min_jalangi_.js').toString();
