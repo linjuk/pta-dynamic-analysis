@@ -25,7 +25,7 @@ path['resultsTransformedJalangi'] = path['resultsTransformed'] + 'jalangi/';
 
 // fetch arguments passed to our program in command line. For example node index.js --octane 10 --jalangi 10. 
 // Code below will fetch octane and jalangi values, if there are no values provided, it will default to 1
-var octaneCount = process.argv[3] || 1;
+var octaneCount = process.argv[3] || 10;
 var jalangiCount = process.argv[5] || 1;
 
 // remove results 
