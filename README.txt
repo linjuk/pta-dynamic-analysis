@@ -56,6 +56,18 @@ of the two procedures in order to keep the "results" subdirectory "clean".
 "evaluation.py" doesn't distinguish, which version of the "uglify-js" was used
 to transform Octane files.
 
+WARNING: If you are going to change the number of the jalangi2 runs over the
+transformed Octane files, please be aware of that, to keep this number for
+all runs of "myprogram2_uglify*.js" you are planning to do. "evaluation.py"
+checks for the number of runs in for the first transformation the script will
+find in "experiments/results/" and assume this number to be the same for all
+subdirectories in this folder. This is important to keep the generation of CSV
+files consistent. Because of this fact you will be not able to aggregate results
+from different transformations with different number of Jalangi2 runs automatically
+using "evaluation.py". If you have some different setups, please separate them
+from "/experiments/results/" and delete "/experiments/evaluation/" first, before
+running "evaluation.py"    
+
 
 
 3) Explanations of the outputs:

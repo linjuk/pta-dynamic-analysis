@@ -4,6 +4,22 @@ from pathlib import Path;
 # suppresses the showing of the plots
 plt.ioff();
 
+# The following function find the transformations number,
+#	1. which metrics values are the smallest (vectorial)
+#	2. which have the highest Octane score
+def finding_min_max(file_names):
+	metrics1 = ['transformation_number','ct_avg', 'hooks_avg', 'conditionals_avg', 'est_mem_usage_avg'];
+	metrics2 = ['ct_avg', 'hooks_avg', 'conditionals_avg', 'est_mem_usage_avg'];
+	metrics3 = ['transformation_number','octane_score'];
+	for file in file_names:
+		csv_file_path = evaluation_path + file + "/" + file + ".csv";
+		df = pd.read_csv(csv_file_path);
+		measurements = df[metrics1];
+		best_trans_number = measurements.nsmallest(1, metrics2)["transformation_number"].values.tolist()[0];
+		print("For " + file + " is the best transformation " + str(best_trans_number) + " occording the metrics measurements.");
+		best_score = df[metrics3].nlargest(1,'octane_score')["transformation_number"].values.tolist()[0];
+		print(file + " has the transformation " + str(best_score) + " with the highest Octane score.\n");
+
 # The follwing function calculates and returns the mean value and the confidence
 # interval for the given data set.
 def mean_confidence_interval(data, confidence):
@@ -21,7 +37,7 @@ def plots(files_names):
 			   ["conditionals_avg","conditionals_avg_confint_lower","conditionals_avg_confint_upper"],
 			   ["est_mem_usage_avg","est_mem_usage_avg_confint_lower","est_mem_usage_avg_confint_upper"]];
 	path_to_originals = transformations_path + "original/";
-	measured_files = ["Box2D","DeltaBlue","RayTrace","Splay"];#"PdfJS",
+	measured_files = ["Box2D","DeltaBlue","RayTrace"];#"PdfJS", "Splay", "NavierStokes", "EarleyBoyer"
 	for file in files_names:
 		csv_file_path = evaluation_path + file + "/" + file + ".csv";
 		df = pd.read_csv(csv_file_path);
@@ -33,49 +49,31 @@ def plots(files_names):
 			csv_file_name = m.group(1);
 			# Split the measurements from the file name.
 			measurements = line.split(" ")[1];
-			# Split the "measurements" in the separated values.
-			tmp = measurements.split(",");
 			if csv_file_name == file:
-				values_from_originals = tmp;
+				# Split the "measurements" in the separated values.
+				values_from_originals = measurements.split(",");
 		for metric in metrics:
 			saved_columns = df[metric];
 			value_from_original = 0;
 			fig = plt.figure()
-			# if metric == ["octane_score"]:
-			# 	if file_name == "navier-stokes":
-			# 		tmp_octane = [];
-			# 		for j in range(4,11):
-			# 			child = subprocess.Popen("grep NavierStokes "+path_to_originals+"/octane/"+"octane_run_"+str(j)+".txt",stdout=subprocess.PIPE,shell=True);
-			# 			output = child.communicate()[0];
-			# 			score = output.decode("utf8");
-			# 			if score:
-			# 				tmp_octane.append(int(score.split(":")[1].replace(" ", "").replace("\n","")));
-			# 		octane_score_value["value"] = mean_confidence_interval(tmp_octane,0.95)[0];
-			# 		print(octane_score_value)
-			# 		del tmp_octane;
-			# 	if file_name == "earley-boyer":
-			# 		tmp_octane = [];
-			# 		for j in range(4,11):
-			# 			child = subprocess.Popen("grep EarleyBoyer "+path_to_originals+"/octane/"+"octane_run_"+str(j)+".txt",stdout=subprocess.PIPE,shell=True);
-			# 			output = child.communicate()[0];
-			# 			score = output.decode("utf8");
-			# 			if score:
-			# 				tmp_octane.append(int(score.split(":")[1].replace(" ", "").replace("\n","")));
-			# 		octane_score_value["value"] = mean_confidence_interval(tmp_octane,0.95)[0];
-			# 		print(octane_score_value)
-			# 		del tmp_octane;
-			# 	for measured in measured_files:
-			# 		tmp_octane = [];
-			# 		if measured.lower() == file:
-			# 			for j in range(4,11):
-			# 				child = subprocess.Popen("grep " + measured + " "+path_to_originals+"/octane/"+"octane_run_"+str(j)+".txt",stdout=subprocess.PIPE,shell=True);
-			# 				output = child.communicate()[0];
-			# 				score = output.decode("utf8");
-			# 				print(score);
-			# 				if score:
-			# 					tmp_octane.append(int(score.split(":")[1].replace(" ", "").replace("\n","")));
-			# 				octane_score_value["value"] = mean_confidence_interval(tmp_octane,0.95)[0];
-			# 		del tmp_octane;
+			if metric == ["octane_score"]:
+				tmp_octane = [];
+				for j in range(4,11):
+					if file == "navier-stokes":
+						child = subprocess.Popen("grep NavierStokes "+path_to_originals+"/octane/"+"octane_run_"+str(j)+".txt",stdout=subprocess.PIPE,shell=True);
+					elif file == "earley-boyer":
+						child = subprocess.Popen("grep EarleyBoyer "+path_to_originals+"/octane/"+"octane_run_"+str(j)+".txt",stdout=subprocess.PIPE,shell=True);
+					elif file == "splay":
+						child = subprocess.Popen("grep -Ei Splay "+path_to_originals+"/octane/"+"octane_run_"+str(j)+".txt | grep -Eiv 'SplayLatency'",stdout=subprocess.PIPE,shell=True);
+					else:
+						for measured in measured_files:
+							if measured.lower() == file:
+								child = subprocess.Popen("grep " + measured + " "+path_to_originals+"/octane/"+"octane_run_"+str(j)+".txt",stdout=subprocess.PIPE,shell=True);
+					output = child.communicate()[0];
+					score = output.decode("utf8");
+					if score:
+						tmp_octane.append(int(score.split(":")[1].replace(" ", "").replace("\n","")));
+				octane_score_value["value"] = mean_confidence_interval(tmp_octane,0.95)[0];
 			if not metric == ["octane_score"]:
 				plt.axhline(round(float(values_from_originals[metrics.index(metric)-1]),2), color="r", linestyle="-");
 			else:
@@ -271,7 +269,8 @@ else:
 
 # Check if the transformations are already evaluated
 head_line = ["transformation_number"];
-for j in range(1,11):
+number_of_runs = len([f.path for f in os.scandir(transformations[0]+"/") if f.is_dir() and f.name.startswith("run_")]);
+for j in range(1,number_of_runs+1):
 	n = str(j);
 	head_line.extend(["run_" + n + "_ct", "run_" + n + "_hooks", "run_" + n + "_conditionals", "run" + n + "_memory_usage"]);
 head_line.extend(["file_size","octane_score","ct_avg","ct_avg_confint_lower","ct_avg_confint_upper",
@@ -303,15 +302,22 @@ for transformation in transformations:
 	elif any(trans_number not in x for x in already_evaluated):
 		evaluate(transformation,trans_number);
 if (len(new_evaluated) != 0):
-	print("New evaluated combinations are: " + ", ".join(new_evaluated));
-	print("Mark those for the future as 'evaluated'");
+	print("New evaluated combinations are: " + ", ".join(new_evaluated) + "\n");
+	print("Mark those for the future as 'evaluated'.\n");
 	evaluated = open(evaluated_path, "a", newline="\n");
 	evaluated.write(", ".join(new_evaluated) + " ");
 	evaluated.close();
 	# Make plots from the evaluations
-	print("Plot one graph for each metric for all considered Octane files");
+	print("Plot one graph for each metric for all considered Octane files.\n");
 	plots(files_names);
 	# Measure the seemingly semilarity of the transformations
+	print("Measure the 'seemingly semilarity' of the transformations.\n");
 	semilarity(files_names);
+	print("\nCheck for all transformed Octane files, which transformation have");
+	print("the smallest metrics meausrements and which the highest Octane score.");
+	print("If you are interested in the lists of the applied transformations options,");
+	print("please take a look in 'experiments/trasformed/transformation_number_from_the_list_below'");
+	print("for the file 'compressor_options.txt'.\n");
+	finding_min_max(files_names);
 else:
 	print("No new combinations to evaluate were found!");
