@@ -20,6 +20,7 @@ __Content__
 2) Commands for an execution and warnings
 3) Explanations of the outputs (The answers on the questions:
 	 Where and what can be found? What contains what?
+4) Old implementation
 
 
 
@@ -72,7 +73,6 @@ different setups, please separate them from
 "pta-dynamic-analysis/generated/evaluation/" first, before running "evaluation.py"    
 
 
-
 3) Explanations of the outputs:
 
 The outputs of an execution of these three scripts are filed in the following 
@@ -115,3 +115,11 @@ sizes. On this way it is checked, if the certain "types" of the transformations
 produce the same/equivalent source code. Of course it is only the first sign of
 this fact. "evaluation.py" does not check transformed files for the textual
 equivalence.
+
+
+4) Old implementation:
+For the complenteness is the archive "old_implementation.zip". After an extraction
+you will find the directory "old_implementation". This consist the first fully
+functioning implementation approach. Because of the issue that is described in
+section 2.1 of the protocol this doesn't fulfil all of the task and aims of the
+project. For details regarding the execution see README.txt in the directory.
