@@ -37,7 +37,7 @@ def plots(files_names):
 			   ["conditionals_avg","conditionals_avg_confint_lower","conditionals_avg_confint_upper"],
 			   ["est_mem_usage_avg","est_mem_usage_avg_confint_lower","est_mem_usage_avg_confint_upper"]];
 	path_to_originals = transformations_path + "original/";
-	measured_files = ["Box2D","DeltaBlue","RayTrace"];#"PdfJS", "Splay", "NavierStokes", "EarleyBoyer"
+	measured_files = ["Crypto","DeltaBlue","RayTrace","Richards"];
 	for file in files_names:
 		csv_file_path = evaluation_path + file + "/" + file + ".csv";
 		df = pd.read_csv(csv_file_path);
@@ -59,12 +59,8 @@ def plots(files_names):
 			if metric == ["octane_score"]:
 				tmp_octane = [];
 				for j in range(4,11):
-					if file == "navier-stokes":
-						child = subprocess.Popen("grep NavierStokes "+path_to_originals+"/octane/"+"octane_run_"+str(j)+".txt",stdout=subprocess.PIPE,shell=True);
-					elif file == "earley-boyer":
+					if file == "earley-boyer":
 						child = subprocess.Popen("grep EarleyBoyer "+path_to_originals+"/octane/"+"octane_run_"+str(j)+".txt",stdout=subprocess.PIPE,shell=True);
-					elif file == "splay":
-						child = subprocess.Popen("grep -Ei Splay "+path_to_originals+"/octane/"+"octane_run_"+str(j)+".txt | grep -Eiv 'SplayLatency'",stdout=subprocess.PIPE,shell=True);
 					else:
 						for measured in measured_files:
 							if measured.lower() == file:
@@ -176,7 +172,7 @@ def evaluate (transformation, trans_number):
 	# If the order exisits, calculate the mean of the runs from 4 to 10. Else, append '0'.
 	# If there no order in place, then the octane score for the given transformation is '-1'.
 	if Path(transformation+"/octane/").is_dir():
-		measured_files = ["Box2D","DeltaBlue","EarleyBoyer","NavierStokes","RayTrace","Splay"];#"PdfJS",
+		measured_files = ["Crypto","DeltaBlue","EarleyBoyer","RayTrace","Richards"];
 		for name in measured_files:
 			octane_scores = [];
 			for j in range(4,11):
@@ -189,11 +185,6 @@ def evaluate (transformation, trans_number):
 				# Handle the NavierStokes Octane test as the separate case, due
 				# the fact of the difference between the name of the test in the
 				# bencmark Octane and the name of the source file
-				if item["name"] == "navier-stokes" and name == "NavierStokes":
-					if(not len(octane_scores) == 0):
-						item["values"] += str(mean_confidence_interval(octane_scores,0.95)[0]) + ",";
-					else:
-						item["values"] += "0,";
 				elif item["name"] == "earley-boyer" and name == "EarleyBoyer":
 					if(not len(octane_scores) == 0):
 						item["values"] += str(mean_confidence_interval(octane_scores,0.95)[0]) + ",";
@@ -242,16 +233,16 @@ def evaluate (transformation, trans_number):
 
 
 # Where all evaluation results are saved.
-print("Evaluation directory: /experiments/evaluation/\n");
+print("Evaluation directory: /pta-dynamic-analysis/generated/evaluation/\n");
 # Check if the folder exisits. If not, create it.
-evaluation_path = os.getcwd() + "/experiments/evaluation/";
+evaluation_path = os.getcwd() + "/pta-dynamic-analysis/generated/evaluation/";
 evaluation_dir = Path(evaluation_path);
 if(not evaluation_dir.is_dir()): os.makedirs(evaluation_path);
 # The name of the files for the evaluation results.
-files_names = ["box2d","deltablue","earley-boyer","navier-stokes","raytrace","splay"]; #,"pdfjs"
+files_names = ["crypto","deltablue","earley-boyer","raytrace","richards"];
 # Get the list of all transformations.
-transformations_path = os.getcwd() + "/experiments/results/";
-transformations = [f.path for f in os.scandir(transformations_path) if f.is_dir() and not f.name.startswith("original")];
+transformations_path = os.getcwd() + "/pta-dynamic-analysis/generated/results/transformed/";
+transformations = [f.path for f in os.scandir(transformations_path) if f.is_dir()];
 # Get the list of all evaluated combinations if they are present.
 already_evaluated = [];
 evaluated_path = evaluation_path + "evaluated_combinations.txt";
@@ -269,7 +260,7 @@ else:
 
 # Check if the transformations are already evaluated
 head_line = ["transformation_number"];
-number_of_runs = len([f.path for f in os.scandir(transformations[0]+"/") if f.is_dir() and f.name.startswith("run_")]);
+number_of_runs = len([f.path for f in os.scandir(transformations[0]+"/jalangi/") if f.is_dir() and f.name.startswith("run_")]);
 for j in range(1,number_of_runs+1):
 	n = str(j);
 	head_line.extend(["run_" + n + "_ct", "run_" + n + "_hooks", "run_" + n + "_conditionals", "run" + n + "_memory_usage"]);
