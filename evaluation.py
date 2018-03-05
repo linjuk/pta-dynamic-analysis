@@ -41,11 +41,11 @@ def plots(files_names):
 	for file in files_names:
 		csv_file_path = evaluation_path + file + "/" + file + ".csv";
 		df = pd.read_csv(csv_file_path);
-		originals_results = open(path_to_originals + "/originals_results.txt");
+		originals_results = open(path_to_originals + "originals_results.txt");
 		values_from_originals= [];
 		octane_score_value = {"name": file, "value": 0};
 		for line in originals_results:
-			m = re.search("(.+?).min.js", line);
+			m = re.search("(.+?).js", line);
 			csv_file_name = m.group(1);
 			# Split the measurements from the file name.
 			measurements = line.split(" ")[1];
@@ -127,8 +127,8 @@ def evaluate (transformation, trans_number):
 		data.append(dict_m);
 	# Iterate over runs in order to generate the contant of the row.
 	reg_runfolder = re.compile("run_\d");
-	# for f in os.scandir(transformation+"/"): print(f.name);
-	runs = [f.path for f in os.scandir(transformation+"/") if f.is_dir() and f.name.startswith("run_")];
+	#for f in os.scandir(transformation+"/"): print(f.name);
+	runs = [f.path for f in os.scandir(transformation+"/results") if f.is_dir() and f.name.startswith("run_")];
 	for run in runs:
 		run_results = open(run + "/run_results.txt");
 		# For each line in "run_results.txt" do:
@@ -152,8 +152,8 @@ def evaluate (transformation, trans_number):
 					item["values"] += measurements.replace('\n',',');
 	# Gather the files sizes:
 	# If the file exisits, append the measurement. Else, append 'NaN'.
-	if Path(transformation+"/"+"files_sizes.txt").is_file():
-		files_sizes = open(transformation+"/"+"files_sizes.txt");
+	if Path(transformation+"/results/files_sizes.txt").is_file():
+		files_sizes = open(transformation+"/results/files_sizes.txt");
 		for line in files_sizes:
 			# Search for the file name.
 			m = re.search("(.+?).min.js", line);
@@ -171,12 +171,12 @@ def evaluate (transformation, trans_number):
 	# Gather the scrores from Octane runs:
 	# If the order exisits, calculate the mean of the runs from 4 to 10. Else, append '0'.
 	# If there no order in place, then the octane score for the given transformation is '-1'.
-	if Path(transformation+"/octane/").is_dir():
+	if Path(transformation+"/results/octane/").is_dir():
 		measured_files = ["Crypto","DeltaBlue","EarleyBoyer","RayTrace","Richards"];
 		for name in measured_files:
 			octane_scores = [];
 			for j in range(4,11):
-				child = subprocess.Popen("grep "+name+" "+transformation+"/octane/"+"octane_run_"+str(j)+".txt",stdout=subprocess.PIPE,shell=True);
+				child = subprocess.Popen("grep "+name+" "+transformation+"/results/octane/"+"octane_run_"+str(j)+".txt",stdout=subprocess.PIPE,shell=True);
 				output = child.communicate()[0];
 				score = output.decode("utf8");
 				if score:
@@ -185,14 +185,14 @@ def evaluate (transformation, trans_number):
 				# Handle the NavierStokes Octane test as the separate case, due
 				# the fact of the difference between the name of the test in the
 				# bencmark Octane and the name of the source file
-				elif item["name"] == "earley-boyer" and name == "EarleyBoyer":
+				if item["name"] == "earley-boyer" and name == "EarleyBoyer":
 					if(not len(octane_scores) == 0):
-						item["values"] += str(mean_confidence_interval(octane_scores,0.95)[0]) + ",";
+						item["values"] += str(round(mean_confidence_interval(octane_scores,0.95)[0])) + ",";
 					else:
 						item["values"] += "0,";
 				elif item["name"] == name.lower():
 					if(not len(octane_scores) == 0):
-						item["values"] += str(mean_confidence_interval(octane_scores,0.95)[0]) + ",";
+						item["values"] += str(round(mean_confidence_interval(octane_scores,0.95)[0])) + ",";
 					else:
 						item["values"] += "0,";
 	else:
@@ -233,16 +233,16 @@ def evaluate (transformation, trans_number):
 
 
 # Where all evaluation results are saved.
-print("Evaluation directory: /pta-dynamic-analysis/generated/evaluation/\n");
+print("Evaluation directory: /pta-dynamic-analysis/evaluation/\n");
 # Check if the folder exisits. If not, create it.
-evaluation_path = os.getcwd() + "/pta-dynamic-analysis/generated/evaluation/";
+evaluation_path = os.getcwd() + "/evaluation/";
 evaluation_dir = Path(evaluation_path);
 if(not evaluation_dir.is_dir()): os.makedirs(evaluation_path);
 # The name of the files for the evaluation results.
 files_names = ["crypto","deltablue","earley-boyer","raytrace","richards"];
 # Get the list of all transformations.
-transformations_path = os.getcwd() + "/pta-dynamic-analysis/generated/results/transformed/";
-transformations = [f.path for f in os.scandir(transformations_path) if f.is_dir()];
+transformations_path = os.getcwd() + "/history/";
+transformations = [f.path for f in os.scandir(transformations_path) if f.is_dir() and not f.name.startswith("original")];
 # Get the list of all evaluated combinations if they are present.
 already_evaluated = [];
 evaluated_path = evaluation_path + "evaluated_combinations.txt";
@@ -260,7 +260,10 @@ else:
 
 # Check if the transformations are already evaluated
 head_line = ["transformation_number"];
-number_of_runs = len([f.path for f in os.scandir(transformations[0]+"/jalangi/") if f.is_dir() and f.name.startswith("run_")]);
+# Check how many Jalangi dynamic analysis runs were executed.
+# Assume this number to be constants for all of transformations.
+# If it is not the case, "eveluation.py" will throw an error.
+number_of_runs = len([f.path for f in os.scandir(transformations[0]+"/results/") if f.is_dir() and f.name.startswith("run_")]);
 for j in range(1,number_of_runs+1):
 	n = str(j);
 	head_line.extend(["run_" + n + "_ct", "run_" + n + "_hooks", "run_" + n + "_conditionals", "run" + n + "_memory_usage"]);
