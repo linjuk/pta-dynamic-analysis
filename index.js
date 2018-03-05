@@ -173,16 +173,16 @@ function toBoolean(num) {
  */
 function runJalangiOnSource() {
 
-  for (var j = 1; j <= jalangiCount; j++) {
+  //for (var j = 1; j <= jalangiCount; j++) {
 
     //create folder for each run
-    runPath = path['resultsOriginalJalangi'] + 'run_' + j + '/';
+    runPath = path['resultsOriginalJalangi'];
     if (!fs.existsSync(runPath)) {
       fs.mkdirSync(runPath);
     }
 
-    console.log('Run ' + j);
-    console.log('');
+    //console.log('Run ' + j);
+    //console.log('');
 
 
     for (var i = 0; i < sourceFiles.length; i++) {
@@ -213,13 +213,14 @@ function runJalangiOnSource() {
       var estimatedMemUsage = (endMem - startMem).toFixed(2);
       var compTime = parseFloat(process.hrtime(startTime)[0] + "." + process.hrtime(startTime)[1].toString()).toFixed(2);
 
+      var fileResultsFromOriginals = sourceFiles[i] + ".js: " + compTime + "," + hookCount + "," + conditionalsCount + "," + estimatedMemUsage;
       var consoleStats = '✓ ' + sourceFiles[i] + '.js, elapsed time: ' + compTime + ', hookCount: ' + hookCount + ', conditionalsCount: ' + conditionalsCount + ' memStart: ' + startMem + 'MB memEnd: ' + endMem + 'MB estimatedMemUsage: ' + estimatedMemUsage + 'MB';
-      fs.appendFileSync(runPath + sourceFiles[i] + '.js_results.txt', consoleStats + "\n", "utf8");
+      fs.appendFileSync(runPath + 'originals_results.txt', fileResultsFromOriginals + "\n", "utf8");
       console.log(consoleStats);
     }
 
     console.log('');
-  }
+  //}
 }
 
 /**
@@ -262,8 +263,10 @@ function runJalangiOnTransformed() {
       var estimatedMemUsage = (endMem - startMem).toFixed(2);
       var compTime = parseFloat(process.hrtime(startTime)[0] + "." + process.hrtime(startTime)[1].toString()).toFixed(2);
 
+      var fileResultsFromOriginals = sourceFiles[i] + ".min.js: " + compTime + "," + hookCount + "," + conditionalsCount + "," + estimatedMemUsage;
       var consoleStats = '✓ ' + sourceFiles[i] + '.min.js, elapsed time: ' + compTime + ', hookCount: ' + hookCount + ', conditionalsCount: ' + conditionalsCount + ' memStart: ' + startMem + 'MB memEnd: ' + endMem + 'MB estimatedMemUsage: ' + estimatedMemUsage + 'MB';
-      fs.appendFileSync(runPath + sourceFiles[i] + '.min.js_results.txt', consoleStats + "\n", "utf8");
+      //fs.appendFileSync(runPath + sourceFiles[i] + '.min.js_results.txt', consoleStats + "\n", "utf8");
+      fs.appendFileSync(runPath + 'run_results.txt', fileResultsFromOriginals + "\n", "utf8");
       console.log(consoleStats);
     }
 
@@ -516,10 +519,10 @@ function runTransformations() {
 
     if (transformation === 'random') {
 
-      if (!fs.existsSync(runPath + 'octane1/')) {
-        fs.mkdirSync(runPath + 'octane1/');
-      }
-      exec('cp ' + destFilePath + ' ' + runPath + 'octane1/');
+      // if (!fs.existsSync(runPath + 'octane1/')) {
+      //   fs.mkdirSync(runPath + 'octane1/');
+      // }
+      // exec('cp ' + destFilePath + ' ' + runPath + 'octane1/');
     }
   }
 
@@ -598,11 +601,11 @@ function runTransformations() {
 
     if (transformation === 'random') {
 
-      if (!fs.existsSync(runPath + 'octane2/')) {
-        fs.mkdirSync(runPath + 'octane2/');
-      }
+      // if (!fs.existsSync(runPath + 'octane2/')) {
+      //   fs.mkdirSync(runPath + 'octane2/');
+      // }
 
-      exec('cp ' + destFilePath + ' ' + runPath + 'octane2/');
+      // exec('cp ' + destFilePath + ' ' + runPath + 'octane2/');
     }
   }
 }
@@ -670,10 +673,37 @@ function fetchArgument(flag) {
 }
 
 function copyResultsToHistory() {
-  if (transformation === 'random') {
-    // if (!fs.existsSync(masterRandom + 'results/'))
-    fs.mkdirSync(masterRandom + 'results/');
 
-    exec('cp -R ' + path['results'] + ' ' + masterRandom);
+
+  // run only in case of random transformed
+  if (transformation === 'random') {
+
+    // for example check if 343435/results/ exists, if not, created it
+    if (!fs.existsSync(masterRandom + 'results/'))
+      fs.mkdirSync(masterRandom + 'results/');
+
+     // delete 343435/results/jalangi folder
+     exec('rm -rf ' + path['history'] + 'original/');
+
+      
+    // copy stuff from generated/results/transformed folder to 343435/results/
+    exec('cp -a ' + path['results'] + 'transformed/. ' + masterRandom + 'results/');
+
+    // copy stuff from generated/results/original folder to history/
+    exec('cp -a ' + path['results'] + 'original/ ' + path['history']+'original');
+
+    // take out stuff from history/original/jalangi and paste it in history/original
+    exec('cp -a ' + path['history'] + 'original/jalangi/. ' + path['history'] + 'original/');
+
+    // delete history/original/jalangi
+    exec('rm -rf ' + path['history'] + 'original/jalangi');
+    
+    // copy stuff from 343435/results/jalangi to 343435/results
+    exec('cp -a ' + masterRandom + 'results/jalangi/. ' + masterRandom + 'results/');
+
+    // delete 343435/results/jalangi folder
+    exec('rm -rf ' + masterRandom + 'results/jalangi/');
+
+    
   }
 }
