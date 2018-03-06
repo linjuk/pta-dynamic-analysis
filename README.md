@@ -7,7 +7,7 @@
 > @authors: Lina Jukonyte, Arseny Skryagin<br />
 > @email: {lina.jukonyte, arseny.skryagin}@stud.tu-darmstadt.de
 
-This document describes the exact procedure of the implementation. This consists of the two main files: `index.js` and `evaluation.py`. All files are developed and tested on Ubuntu 16.04.
+This document describes the exact procedure of the implementation. This consists of the two main files: `index.js` and `evaluation.py`. All files are developed and tested on Debian 9.1 and Ubuntu 16.04.
 
 ## Getting started
 ```
@@ -21,7 +21,7 @@ node index.js --transformation fixed --octane 10 --jalangi 10
 ```
 --transformation [fixed or random] # default fixed
 --octane [number] # default 10
---jalangi [number] # default 10
+--jalangi [number] # default 5
 ```
 
 "index.js" can be run with 3 different options: 
